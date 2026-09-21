@@ -83,17 +83,28 @@ class SniperBot(commands.Bot):
             # CRITICAL FIX: Sync the command tree with Discord
             # This makes slash commands visible and functional immediately
             logger.info("Attempting to sync command tree...")
+            
+            # Sync commands globally (takes up to 1 hour to propagate)
+            # For faster testing during development, use guild-specific sync:
+            # self.tree.copy_global_to(guild=YOUR_GUILD_ID)
+            # await self.tree.sync(guild=YOUR_GUILD_ID)
+            
             synced = await self.tree.sync()
             logger.info(f"Successfully synced {len(synced)} commands.")
+            
+            # Log all registered commands for debugging
+            commands_list = [cmd.name for cmd in self.tree.get_commands()]
+            logger.info(f"Registered commands: {commands_list}")
             
             # Send startup notification to the configured channel
             channel = self.get_channel(self.channel_id)
             if channel:
                 await channel.send(
-                    "🟢 **Sniper Bot Online.**\n"
-                    "✅ Command tree synced successfully.\n"
-                    "Use `/resume` to start scanning.\n"
-                    "Use `/status` to check bot stats."
+                    f"🟢 **Sniper Bot Online.**\n"
+                    f"✅ Command tree synced successfully ({len(synced)} commands).\n"
+                    f"📋 Commands: {', '.join(commands_list)}\n"
+                    f"Use `/resume` to start scanning.\n"
+                    f"Use `/status` to check bot stats."
                 )
             else:
                 logger.warning(f"Could not find channel ID {self.channel_id} to send startup message.")
