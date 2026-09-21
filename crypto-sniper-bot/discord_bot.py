@@ -58,7 +58,9 @@ class SniperBot(commands.Bot):
             tracker: Initialized SmartMoneyTracker instance
         """
         intents = discord.Intents.default()
-        intents.message_content = True  # Required for some features
+        intents.message_content = True  # Required for reading message content
+        intents.members = True          # Required for member-related events
+        intents.guilds = True           # Required for guild (server) events
         
         super().__init__(command_prefix="!", intents=intents)
         
@@ -77,17 +79,30 @@ class SniperBot(commands.Bot):
         """Called when the bot has successfully connected to Discord."""
         logger.info(f'{self.user} has connected to Discord!')
         
-        # Send startup notification to the configured channel
         try:
+            # CRITICAL FIX: Sync the command tree with Discord
+            # This makes slash commands visible and functional immediately
+            logger.info("Attempting to sync command tree...")
+            synced = await self.tree.sync()
+            logger.info(f"Successfully synced {len(synced)} commands.")
+            
+            # Send startup notification to the configured channel
             channel = self.get_channel(self.channel_id)
             if channel:
                 await channel.send(
                     "🟢 **Sniper Bot Online.**\n"
+                    "✅ Command tree synced successfully.\n"
                     "Use `/resume` to start scanning.\n"
                     "Use `/status` to check bot stats."
                 )
+            else:
+                logger.warning(f"Could not find channel ID {self.channel_id} to send startup message.")
+                
+        except discord.errors.HTTPException as e:
+            logger.error(f"Failed to sync command tree: {e.code} - {e.text}")
+            logger.error("Please check your Bot Token permissions and ensure the bot is invited to the server with 'applications.commands' scope.")
         except Exception as e:
-            logger.error(f"Could not send startup message: {e}")
+            logger.exception(f"An unexpected error occurred during on_ready: {e}")
         
         # Record startup time for uptime tracking
         self.start_time = datetime.utcnow()
