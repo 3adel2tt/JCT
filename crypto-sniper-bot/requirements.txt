@@ -1,0 +1,8 @@
+# Crypto Sniper Bot - Requirements
+# Python 3.10+
+
+discord.py>=2.3.0
+aiohttp>=3.9.0
+web3>=6.0.0
+python-dotenv>=1.0.0
+pandas>=2.0.0
